@@ -7,41 +7,57 @@ import org.apache.spark.sql.SparkSession;
 /**
  * Ingest metadata from a directory containing photos, make them available
  * as EXIF.
- * 
+ *
  * @author jgp
  */
 public class PhotoMetadataIngestionApp {
-  public static void main(String[] args) {
-    PhotoMetadataIngestionApp app = new PhotoMetadataIngestionApp();
-    app.start();
-  }
 
-  /**
-   * Starts the application
-   * 
-   * @return <code>true</code> if all is ok.
-   */
-  private boolean start() {
-    // Get a session
-    SparkSession spark = SparkSession.builder()
-        .appName("EXIF to Dataset")
-        .master("local").getOrCreate();
+    public static void main(String[] args) {
+        PhotoMetadataIngestionApp app = new PhotoMetadataIngestionApp();
+        app.start();
+    }
 
-    // Import directory
-    String importDirectory = "data";
+    /**
+     * Starts the application
+     *
+     * @return <code>true</code> if all is ok.
+     */
+    private boolean start() {
+        // Get a session
+        SparkSession spark = SparkSession.builder()
+                .appName("EXIF to Dataset")
+                .master("local").getOrCreate();
 
-    // read the data
-    Dataset<Row> df = spark.read()
-        .format("exif")
-        .option("recursive", "true")
-        .option("limit", "100000")
-        .option("extensions", "jpg,jpeg")
-        .load(importDirectory);
+        // Import directory
+        String importDirectory = "data";
 
-    System.out.println("I have imported " + df.count() + " photos.");
-    df.printSchema();
-    df.show(5);
+        // read the data
+        Dataset<Row> df = spark.read()
+                .format("exif")
+                .option("recursive", "true")
+                .option("limit", "100000")
+                .option("extensions", "jpg,jpeg")
+                .load(importDirectory);
 
-    return true;
-  }
+        System.out.println("I have imported " + df.count() + " photos.");
+        df.printSchema();
+        df.show(5);
+        Dataset<Row> df_cleaned =
+        df.drop("MimeType",
+                        "Directory",
+                        "FileCreationDate",
+                        "FileLastAccessDate",
+                        "FileLastModifiedDate",
+                        "GeoX",
+                        "GeoY",
+                        "GeoZ",
+                        "Extension")
+        .dropDuplicates();
+
+        System.out.println("I have imported " + df_cleaned.count() + " photos.");
+        df_cleaned.printSchema();
+        df_cleaned.show(155, 120);
+
+        return true;
+    }
 }
